@@ -40,14 +40,14 @@ export function Sidebar() {
       <div className="flex h-14 items-center justify-between px-3 border-b">
         {sidebarOpen && (
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
+            <div className="h-7 w-7 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center transition-transform duration-200 hover:scale-110">
               <Lightbulb className="h-4 w-4 text-primary-foreground" />
             </div>
             <span className="font-semibold text-sm tracking-tight">灵感库</span>
           </div>
         )}
         {!sidebarOpen && (
-          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center mx-auto">
+          <div className="h-7 w-7 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center transition-transform duration-200 hover:scale-110 mx-auto">
             <Lightbulb className="h-4 w-4 text-primary-foreground" />
           </div>
         )}

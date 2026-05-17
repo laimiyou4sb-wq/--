@@ -138,7 +138,7 @@ const CommandItem = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        'flex cursor-pointer items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors',
+        'flex cursor-pointer items-center rounded-lg px-2 py-2 text-sm outline-none transition-all duration-150',
         isSelected && 'bg-accent text-accent-foreground',
         className
       )}

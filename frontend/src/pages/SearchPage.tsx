@@ -278,7 +278,7 @@ export default function SearchPage() {
               <div
                 key={i}
                 onClick={() => handleSearch(h)}
-                className="flex items-center gap-2 p-1.5 text-sm text-muted-foreground hover:text-foreground cursor-pointer rounded hover:bg-accent"
+                className="flex items-center gap-2 p-1.5 text-sm text-muted-foreground hover:text-foreground cursor-pointer rounded-lg hover:bg-accent transition-all duration-200"
               >
                 <Clock className="h-3 w-3" />
                 {h}
@@ -299,7 +299,7 @@ export default function SearchPage() {
           </CardHeader>
           <CardContent className="space-y-1">
             {savedFilters.map((sf) => (
-              <div key={sf.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent">
+              <div key={sf.id} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-accent transition-colors">
                 <span
                   className="text-sm flex-1 cursor-pointer"
                   onClick={() => handleApplyFilter(sf.filter)}

@@ -102,7 +102,7 @@ export default function BrowsePage() {
               <SelectItem value="archived">已归档</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex items-center border rounded-md">
+          <div className="flex items-center border rounded-lg">
             <Button
               variant={view === 'grid' ? 'secondary' : 'ghost'}
               size="icon-sm"

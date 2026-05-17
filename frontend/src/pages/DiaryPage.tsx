@@ -129,7 +129,7 @@ export default function DiaryPage() {
                   <button
                     key={dateStr}
                     onClick={() => handleDateClick(day)}
-                    className={`aspect-square flex flex-col items-center justify-center rounded-md text-xs transition-colors ${
+                    className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs transition-all duration-200 active:scale-95 ${
                       isSelected
                         ? 'bg-primary text-primary-foreground'
                         : today
@@ -194,7 +194,7 @@ export default function DiaryPage() {
               </div>
 
               {showLinkInspiration && (
-                <div className="max-h-48 overflow-auto space-y-1 border rounded-md p-2">
+                <div className="max-h-48 overflow-auto space-y-1 border rounded-xl p-2">
                   {allInspirations.map((insp) => {
                     const isLinked = currentEntry?.linkedInspirationIds?.includes(insp.id)
                     return (
@@ -236,7 +236,7 @@ export default function DiaryPage() {
               {diaryEntries.slice(0, 5).map((entry) => (
                 <div
                   key={entry.id}
-                  className="cursor-pointer hover:bg-accent rounded-md p-2 -mx-2 transition-colors"
+                  className="cursor-pointer hover:bg-accent hover:shadow-sm rounded-lg p-2 -mx-2 transition-all duration-200"
                   onClick={() => {
                     setSelectedDate(entry.date)
                     setContent(entry.content)

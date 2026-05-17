@@ -55,7 +55,7 @@ export function QuickCapture() {
         </VisuallyHidden>
         <form onSubmit={handleSubmit}>
           <div className="flex items-center gap-3 px-4 pt-4 pb-2 border-b">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 transition-transform duration-200 hover:scale-110">
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <Input

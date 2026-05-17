@@ -53,9 +53,9 @@ function ConnectionGraph({ inspiration, allInspirations }: { inspiration: Inspir
           <Link
             key={conn.id}
             to={`/inspiration/${target.id}`}
-            className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+            className="flex items-start gap-3 p-3 rounded-xl border hover:bg-accent hover:shadow-sm transition-all duration-200"
           >
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 mt-0.5 transition-transform duration-200 hover:scale-110">
               <Network className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
@@ -247,7 +247,7 @@ export default function InspirationDetailPage() {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 rounded-md hover:bg-accent transition-colors text-sm text-primary"
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent transition-all duration-200 text-sm text-primary"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                     {link.title || link.url}
@@ -301,7 +301,7 @@ export default function InspirationDetailPage() {
             </CardHeader>
             <CardContent>
               {showAddConnection && (
-                <div className="space-y-2 mb-3 p-3 rounded-md bg-muted/50">
+                <div className="space-y-2 mb-3 p-3 rounded-xl bg-muted/50">
                   <Select value={connectionTarget} onValueChange={setConnectionTarget}>
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="选择关联灵感..." />

@@ -41,7 +41,7 @@ function SortableCard({ inspiration }: { inspiration: Inspiration }) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        'p-3 rounded-md border bg-card shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow',
+        'p-3 rounded-xl border bg-card shadow-sm cursor-grab active:cursor-grabbing active:scale-[0.98] hover:shadow-md transition-all duration-200',
         isDragging && 'opacity-50 shadow-lg'
       )}
       {...attributes}
@@ -71,7 +71,7 @@ interface ColumnProps {
 
 function Column({ column, inspirations, onAddCard, onDeleteColumn }: ColumnProps) {
   return (
-    <div className="flex-shrink-0 w-72 flex flex-col bg-muted/30 rounded-lg">
+    <div className="flex-shrink-0 w-72 flex flex-col bg-muted/30 rounded-xl">
       <div className="flex items-center justify-between p-3 pb-2">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-medium">{column.title}</h3>
@@ -236,7 +236,7 @@ export default function BoardDetailPage() {
           </div>
           <DragOverlay>
             {activeId && getInspiration(activeId) && (
-              <div className="p-3 rounded-md border bg-card shadow-lg w-72">
+              <div className="p-3 rounded-xl border bg-card shadow-lg w-72">
                 <p className="text-xs font-medium">{getInspiration(activeId)!.title}</p>
               </div>
             )}

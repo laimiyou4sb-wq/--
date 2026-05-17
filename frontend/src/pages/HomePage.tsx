@@ -114,7 +114,7 @@ export default function HomePage() {
                 <div
                   key={insp.id}
                   onClick={() => navigate(`/inspiration/${insp.id}`)}
-                  className="flex items-start gap-3 p-2 rounded-md hover:bg-accent cursor-pointer transition-colors -mx-2"
+                  className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent hover:shadow-sm cursor-pointer transition-all duration-200 -mx-2"
                 >
                   <Lightbulb className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <div className="min-w-0 flex-1">
@@ -166,7 +166,7 @@ export default function HomePage() {
                   <div
                     key={insp.id}
                     onClick={() => navigate(`/inspiration/${insp.id}`)}
-                    className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent cursor-pointer transition-colors -mx-1"
+                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-accent hover:shadow-sm cursor-pointer transition-all duration-200 -mx-1"
                   >
                     <Lightbulb className="h-3.5 w-3.5 text-primary shrink-0" />
                     <span className="text-sm truncate">{insp.title}</span>
@@ -187,7 +187,7 @@ export default function HomePage() {
                   <div
                     key={insp.id}
                     onClick={() => navigate(`/inspiration/${insp.id}`)}
-                    className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent cursor-pointer transition-colors -mx-1"
+                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-accent hover:shadow-sm cursor-pointer transition-all duration-200 -mx-1"
                   >
                     <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span className="text-sm truncate">{insp.title}</span>
@@ -214,7 +214,7 @@ export default function HomePage() {
                 <div
                   key={item.to}
                   onClick={() => navigate(item.to)}
-                  className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent cursor-pointer transition-colors -mx-1"
+                  className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-accent hover:shadow-sm cursor-pointer transition-all duration-200 -mx-1"
                 >
                   <item.icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <span className="text-sm">{item.label}</span>

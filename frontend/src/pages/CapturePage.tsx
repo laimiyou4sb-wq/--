@@ -204,7 +204,7 @@ export default function CapturePage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {links.map((link, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm p-2 rounded-md bg-muted/50">
+            <div key={i} className="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/50">
               <span className="flex-1 truncate">
                 <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                   {link.title || link.url}

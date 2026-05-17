@@ -106,7 +106,7 @@ export default function DiscoveryPage() {
           {/* Random Walk */}
           {activeMode === 'random' && randomInspiration && (
             <div className="text-center space-y-4">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mx-auto transition-transform duration-300 hover:scale-110">
                 <Shuffle className="h-6 w-6 text-primary" />
               </div>
               <h2 className="text-lg font-semibold">{randomInspiration.title}</h2>
@@ -216,7 +216,7 @@ export default function DiscoveryPage() {
                     <div
                       key={insp.id}
                       onClick={() => navigate(`/inspiration/${insp.id}`)}
-                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+                      className="flex items-center gap-3 p-3 rounded-xl border hover:bg-accent hover:shadow-sm cursor-pointer transition-all duration-200"
                     >
                       <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -253,7 +253,7 @@ export default function DiscoveryPage() {
                       <div
                         key={insp.id}
                         onClick={() => navigate(`/inspiration/${insp.id}`)}
-                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-xl border hover:bg-accent hover:shadow-sm cursor-pointer transition-all duration-200"
                       >
                         <BellOff className="h-4 w-4 text-orange-400 shrink-0" />
                         <div className="flex-1 min-w-0">
