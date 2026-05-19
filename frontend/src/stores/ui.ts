@@ -43,7 +43,7 @@ export const useUIStore = create<UIState>((set) => ({
     set((s) => ({ toasts: [...s.toasts, { id, message, type }] }))
     setTimeout(() => {
       set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
-    }, 3000)
+    }, 4500)
   },
   removeToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
   searchQuery: '',

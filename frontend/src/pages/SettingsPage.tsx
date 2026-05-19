@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { useSettings, saveSettings } from '@/hooks/useDb'
 import { useInspirations, useBoards, useDiaryEntries } from '@/hooks/useDb'
+import { chatCompletion } from '@/lib/api'
 import {
   Settings,
   Moon,
@@ -20,6 +21,11 @@ import {
   FileText,
   Keyboard,
   Info,
+  Key,
+  Eye,
+  EyeOff,
+  Zap,
+  Loader2,
 } from 'lucide-react'
 
 export default function SettingsPage() {
@@ -34,15 +40,67 @@ export default function SettingsPage() {
 
   const [backupFileName, setBackupFileName] = useState('')
 
+  // API settings local state
+  const [apiBaseUrl, setApiBaseUrl] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [apiModel, setApiModel] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null)
+
+  const apiPresets = [
+    { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+    { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+    { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', model: 'openai/gpt-4o-mini' },
+    { label: 'Ollama', baseUrl: 'http://localhost:11434/v1', model: 'llama3' },
+  ]
+
   useEffect(() => {
     if (appSettings) {
       setTheme(appSettings.theme)
+      setApiBaseUrl(appSettings.apiBaseUrl || 'https://api.openai.com/v1')
+      setApiKey(appSettings.apiKey || '')
+      setApiModel(appSettings.apiModel || 'gpt-4o-mini')
     }
   }, [appSettings])
 
   const handleThemeChange = async (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme)
     await saveSettings({ theme: newTheme })
+  }
+
+  const handleSaveApi = async () => {
+    await saveSettings({ apiBaseUrl, apiKey, apiModel })
+    addToast('API 配置已保存', 'success')
+  }
+
+  const handleTestConnection = async () => {
+    if (!apiBaseUrl || !apiKey || !apiModel) {
+      addToast('请填写完整的 API 配置', 'error')
+      return
+    }
+    setTesting(true)
+    setTestResult(null)
+    try {
+      await chatCompletion({
+        baseUrl: apiBaseUrl,
+        apiKey,
+        model: apiModel,
+        messages: [{ role: 'user', content: '回复"OK"' }],
+      })
+      setTestResult('success')
+      addToast('连接成功', 'success')
+    } catch {
+      setTestResult('error')
+      addToast('连接失败，请检查配置', 'error')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const handlePreset = (preset: typeof apiPresets[0]) => {
+    setApiBaseUrl(preset.baseUrl)
+    setApiModel(preset.model)
   }
 
   const handleExportJSON = () => {
@@ -163,6 +221,109 @@ export default function SettingsPage() {
                 {label}
               </Button>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* API Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Key className="h-4 w-4" />
+            API 配置
+          </CardTitle>
+          <CardDescription className="text-xs">
+            配置大模型 API 以使用灵感启发功能。支持 OpenAI、DeepSeek、OpenRouter、Ollama 等兼容 OpenAI Chat Completions 格式的服务。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Presets */}
+          <div>
+            <h4 className="text-xs font-medium mb-1.5">快捷预设</h4>
+            <div className="flex flex-wrap gap-1.5">
+              {apiPresets.map((p) => (
+                <Button
+                  key={p.label}
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] h-7"
+                  onClick={() => handlePreset(p)}
+                >
+                  {p.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Base URL */}
+          <div>
+            <h4 className="text-xs font-medium mb-1">API 地址</h4>
+            <Input
+              value={apiBaseUrl}
+              onChange={(e) => setApiBaseUrl(e.target.value)}
+              placeholder="https://api.openai.com/v1"
+              className="h-8 text-xs"
+            />
+          </div>
+
+          {/* API Key */}
+          <div>
+            <h4 className="text-xs font-medium mb-1">API 密钥</h4>
+            <div className="flex gap-1.5">
+              <Input
+                type={showKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-..."
+                className="h-8 text-xs"
+              />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setShowKey(!showKey)}
+              >
+                {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Model */}
+          <div>
+            <h4 className="text-xs font-medium mb-1">模型名称</h4>
+            <Input
+              value={apiModel}
+              onChange={(e) => setApiModel(e.target.value)}
+              placeholder="gpt-4o-mini"
+              className="h-8 text-xs"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={handleSaveApi} className="text-xs gap-1">
+              <Zap className="h-3.5 w-3.5" />
+              保存配置
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTestConnection}
+              disabled={testing}
+              className="text-xs gap-1"
+            >
+              {testing ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Zap className="h-3.5 w-3.5" />
+              )}
+              测试连接
+            </Button>
+            {testResult === 'success' && (
+              <span className="text-xs text-green-500">连接成功</span>
+            )}
+            {testResult === 'error' && (
+              <span className="text-xs text-red-500">连接失败</span>
+            )}
           </div>
         </CardContent>
       </Card>

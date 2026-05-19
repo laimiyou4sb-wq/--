@@ -52,13 +52,20 @@ export async function deleteInspiration(id: string): Promise<void> {
   await db.inspirations.delete(id)
 }
 
+const lastViewedMap = new Map<string, number>()
+
 export async function viewInspiration(id: string): Promise<void> {
+  const now = Date.now()
+  const lastView = lastViewedMap.get(id) || 0
+  if (now - lastView < 5000) return
+
   const insp = await db.inspirations.get(id)
   if (insp) {
     await db.inspirations.update(id, {
       viewCount: (insp.viewCount || 0) + 1,
       lastViewedAt: new Date().toISOString(),
     })
+    lastViewedMap.set(id, now)
   }
 }
 
@@ -148,7 +155,7 @@ export async function saveDiaryEntry(
 export function useSettings() {
   return useLiveQuery(async () => {
     const settings = await db.settings.get('app')
-    return settings || { theme: 'system' as const, sidebarCollapsed: false, dailyNotificationEnabled: false, dailyNotificationTime: '08:00', autoBackupEnabled: true }
+    return settings || { theme: 'system' as const, sidebarCollapsed: false, dailyNotificationEnabled: false, dailyNotificationTime: '08:00', autoBackupEnabled: true, apiBaseUrl: 'https://api.openai.com/v1', apiKey: '', apiModel: 'gpt-4o-mini' }
   })
 }
 
@@ -160,6 +167,9 @@ export async function saveSettings(data: Partial<AppSettings>): Promise<void> {
     dailyNotificationEnabled: false,
     dailyNotificationTime: '08:00',
     autoBackupEnabled: true,
+    apiBaseUrl: 'https://api.openai.com/v1',
+    apiKey: '',
+    apiModel: 'gpt-4o-mini',
   }
   const settings = { ...defaults, ...existing, ...data, id: 'app' }
   await db.settings.put(settings)

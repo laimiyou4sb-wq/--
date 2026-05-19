@@ -108,11 +108,8 @@ export default function InspirationDetailPage() {
   )
 
   const handleTogglePin = async () => {
-    await saveInspiration({
-      id: inspiration.id,
-      title: inspiration.title,
-      isPinned: !inspiration.isPinned,
-    })
+    if (!inspiration) return
+    await saveInspiration({ ...inspiration, isPinned: !inspiration.isPinned })
     addToast(inspiration.isPinned ? '已取消置顶' : '已置顶', 'success')
   }
 

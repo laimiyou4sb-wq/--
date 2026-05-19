@@ -26,7 +26,7 @@ export default function DiaryPage() {
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
-  const startBlank = getDay(monthStart)
+  const startBlank = (getDay(monthStart) + 6) % 7
 
   const entryDates = useMemo(() => {
     const set = new Set(diaryEntries.map((e) => e.date))
@@ -68,10 +68,11 @@ export default function DiaryPage() {
       : [...linked, inspId]
     await saveDiaryEntry({
       date: selectedDate,
-      content: currentEntry?.content || '',
+      content: content.trim(),
       mood,
       linkedInspirationIds: newLinked,
     })
+    addToast('关联已更新', 'success')
   }
 
   const linkedInspirations = allInspirations.filter(
@@ -110,7 +111,7 @@ export default function DiaryPage() {
             </div>
 
             <div className="grid grid-cols-7 text-center text-[10px] text-muted-foreground mb-1">
-              {['日', '一', '二', '三', '四', '五', '六'].map((d) => (
+              {['一', '二', '三', '四', '五', '六', '日'].map((d) => (
                 <div key={d} className="py-1">{d}</div>
               ))}
             </div>

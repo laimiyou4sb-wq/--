@@ -1,2 +1,34 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Build output
 dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+frontend/dist/
+
+# Backend
+backend/dist/

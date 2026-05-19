@@ -13,10 +13,10 @@ export function useKeyboardShortcut(
     if (!enabled) return
 
     const listener = (e: KeyboardEvent) => {
-      const mod = ctrl ? e.ctrlKey : false || meta ? e.metaKey : false
-      const hasShift = shift ? e.shiftKey : true
+      const isModifierPressed = (meta && e.metaKey) || (ctrl && e.ctrlKey)
+      const isShiftCorrect = (shift === e.shiftKey)
 
-      if (mod && (shift ? e.shiftKey : true) && e.key.toLowerCase() === key.toLowerCase()) {
+      if (isModifierPressed && isShiftCorrect && e.key.toLowerCase() === key.toLowerCase()) {
         e.preventDefault()
         handler(e)
       }

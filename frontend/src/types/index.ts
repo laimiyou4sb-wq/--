@@ -101,4 +101,7 @@ export interface AppSettings {
   dailyNotificationTime: string
   autoBackupEnabled: boolean
   lastBackupDate?: string
+  apiBaseUrl?: string
+  apiKey?: string
+  apiModel?: string
 }
