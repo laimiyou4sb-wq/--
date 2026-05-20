@@ -65,11 +65,15 @@ function SortableCard({ inspiration }: { inspiration: Inspiration }) {
 interface ColumnProps {
   column: { id: string; title: string; inspirationIds: string[] }
   inspirations: Inspiration[]
+  isAddingCard: boolean
+  newCardTitle: string
+  onNewCardTitleChange: (v: string) => void
   onAddCard: () => void
+  onStartAddCard: () => void
   onDeleteColumn: () => void
 }
 
-function Column({ column, inspirations, onAddCard, onDeleteColumn }: ColumnProps) {
+function Column({ column, inspirations, isAddingCard, newCardTitle, onNewCardTitleChange, onAddCard, onStartAddCard, onDeleteColumn }: ColumnProps) {
   return (
     <div className="flex-shrink-0 w-72 flex flex-col bg-muted/30 rounded-xl">
       <div className="flex items-center justify-between p-3 pb-2">
@@ -80,7 +84,7 @@ function Column({ column, inspirations, onAddCard, onDeleteColumn }: ColumnProps
           </Badge>
         </div>
         <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon-sm" onClick={onAddCard}>
+          <Button variant="ghost" size="icon-sm" onClick={onStartAddCard}>
             <Plus className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="icon-sm" onClick={onDeleteColumn}>
@@ -94,9 +98,22 @@ function Column({ column, inspirations, onAddCard, onDeleteColumn }: ColumnProps
             <SortableCard key={insp.id} inspiration={insp} />
           ))}
         </SortableContext>
-        {inspirations.length === 0 && (
+        {inspirations.length === 0 && !isAddingCard && (
           <div className="text-center py-8">
             <p className="text-xs text-muted-foreground">拖拽卡片到这里</p>
+          </div>
+        )}
+        {isAddingCard && (
+          <div className="flex gap-1.5 p-2 rounded-lg bg-background border">
+            <Input
+              value={newCardTitle}
+              onChange={(e) => onNewCardTitleChange(e.target.value)}
+              placeholder="卡片标题..."
+              className="h-7 text-xs"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && onAddCard()}
+            />
+            <Button size="sm" onClick={onAddCard} className="h-7 text-xs">添加</Button>
           </div>
         )}
       </div>
@@ -111,6 +128,12 @@ export default function BoardDetailPage() {
   const navigate = useNavigate()
   const addToast = useUIStore((s) => s.addToast)
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  // Inline editing state — replaces prompt()
+  const [showNewColumn, setShowNewColumn] = useState(false)
+  const [newColumnTitle, setNewColumnTitle] = useState('')
+  const [addingToColumnId, setAddingToColumnId] = useState<string | null>(null)
+  const [newCardTitle, setNewCardTitle] = useState('')
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -136,60 +159,70 @@ export default function BoardDetailPage() {
     const activeId = active.id as string
     const overId = over.id as string
 
-    const updatedColumns = board.columns.map((col) => {
-      const activeIndex = col.inspirationIds.indexOf(activeId)
-      const overIndex = col.inspirationIds.indexOf(overId)
+    const sourceCol = board.columns.find((c) => c.inspirationIds.includes(activeId))
+    if (!sourceCol) return
 
-      if (activeIndex !== -1 && overIndex !== -1) {
+    const targetCol = board.columns.find((c) => c.inspirationIds.includes(overId))
+
+    const newColumns = board.columns.map((col) => {
+      if (sourceCol.id === col.id && targetCol && targetCol.id === col.id) {
         // Same column reorder
-        const newIds = [...col.inspirationIds]
-        newIds.splice(activeIndex, 1)
-        newIds.splice(overIndex, 0, activeId)
-        return { ...col, inspirationIds: newIds }
-      } else if (activeIndex !== -1) {
-        // Remove from this column
+        const ids = [...col.inspirationIds]
+        const fromIdx = ids.indexOf(activeId)
+        const toIdx = ids.indexOf(overId)
+        ids.splice(fromIdx, 1)
+        ids.splice(toIdx, 0, activeId)
+        return { ...col, inspirationIds: ids }
+      }
+      if (col.id === sourceCol.id) {
         return { ...col, inspirationIds: col.inspirationIds.filter((i) => i !== activeId) }
-      } else if (overIndex !== -1) {
-        // Add to this column
-        const newIds = [...col.inspirationIds]
-        newIds.splice(overIndex, 0, activeId)
-        return { ...col, inspirationIds: newIds }
+      }
+      if (targetCol && col.id === targetCol.id) {
+        const ids = [...col.inspirationIds]
+        const toIdx = ids.indexOf(overId)
+        ids.splice(toIdx, 0, activeId)
+        return { ...col, inspirationIds: ids }
       }
       return col
     })
 
-    // If moving to a different column (card dropped on a column directly)
-    const overCol = board.columns.find((c) => c.id === overId)
-    if (overCol && !overCol.inspirationIds.includes(activeId)) {
-      const finalColumns = updatedColumns.map((col) => {
-        if (col.id === overId) return { ...col, inspirationIds: [...col.inspirationIds, activeId] }
-        return col
-      })
-      await saveBoard({ ...board, columns: finalColumns })
-    } else {
-      await saveBoard({ ...board, columns: updatedColumns })
+    try {
+      await saveBoard({ ...board, columns: newColumns })
+    } catch {
+      addToast('移动失败，请重试', 'error')
     }
   }
 
   const handleAddColumn = async () => {
-    const title = prompt('输入列名称:')
+    const title = newColumnTitle.trim()
     if (!title) return
-    const newCol = { id: generateId(), title, inspirationIds: [] }
-    await saveBoard({ ...board, columns: [...board.columns, newCol] })
-    addToast('列已添加', 'success')
+    try {
+      const newCol = { id: generateId(), title, inspirationIds: [] }
+      await saveBoard({ ...board, columns: [...board.columns, newCol] })
+      addToast('列已添加', 'success')
+      setNewColumnTitle('')
+      setShowNewColumn(false)
+    } catch {
+      addToast('添加列失败', 'error')
+    }
   }
 
   const handleAddCardToColumn = async (columnId: string) => {
-    // Show quick add dialog or select existing inspiration
-    const title = prompt('输入卡片标题（新建灵感）:')
+    const title = newCardTitle.trim()
     if (!title) return
-    const { saveInspiration } = await import('@/hooks/useDb')
-    const insp = await saveInspiration({ title, type: 'seed', status: 'thinking' })
-    const updatedColumns = board.columns.map((col) =>
-      col.id === columnId ? { ...col, inspirationIds: [...col.inspirationIds, insp.id] } : col
-    )
-    await saveBoard({ ...board, columns: updatedColumns })
-    addToast('卡片已添加', 'success')
+    try {
+      const { saveInspiration } = await import('@/hooks/useDb')
+      const insp = await saveInspiration({ title, type: 'seed', status: 'thinking' })
+      const updatedColumns = board.columns.map((col) =>
+        col.id === columnId ? { ...col, inspirationIds: [...col.inspirationIds, insp.id] } : col
+      )
+      await saveBoard({ ...board, columns: updatedColumns })
+      addToast('卡片已添加', 'success')
+      setNewCardTitle('')
+      setAddingToColumnId(null)
+    } catch {
+      addToast('添加卡片失败', 'error')
+    }
   }
 
   return (
@@ -204,10 +237,6 @@ export default function BoardDetailPage() {
             <p className="text-xs text-muted-foreground">{board.description}</p>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={handleAddColumn} className="text-xs gap-1">
-          <Plus className="h-3 w-3" />
-          添加列
-        </Button>
       </div>
 
       <div className="flex-1 overflow-auto p-4">
@@ -223,16 +252,52 @@ export default function BoardDetailPage() {
                 key={col.id}
                 column={col}
                 inspirations={col.inspirationIds.map(getInspiration).filter(Boolean) as Inspiration[]}
+                isAddingCard={addingToColumnId === col.id}
+                newCardTitle={addingToColumnId === col.id ? newCardTitle : ''}
+                onNewCardTitleChange={(v) => setNewCardTitle(v)}
                 onAddCard={() => handleAddCardToColumn(col.id)}
+                onStartAddCard={() => {
+                  setAddingToColumnId(col.id)
+                  setNewCardTitle('')
+                }}
                 onDeleteColumn={async () => {
                   if (!confirm('删除此列？')) return
-                  await saveBoard({
-                    ...board,
-                    columns: board.columns.filter((c) => c.id !== col.id),
-                  })
+                  try {
+                    await saveBoard({
+                      ...board,
+                      columns: board.columns.filter((c) => c.id !== col.id),
+                    })
+                  } catch {
+                    addToast('删除列失败', 'error')
+                  }
                 }}
               />
             ))}
+            {/* Add column inline */}
+            {showNewColumn ? (
+              <div className="flex-shrink-0 w-72 flex gap-1.5 p-3 bg-muted/30 rounded-xl">
+                <Input
+                  value={newColumnTitle}
+                  onChange={(e) => setNewColumnTitle(e.target.value)}
+                  placeholder="列名称..."
+                  className="h-7 text-xs"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddColumn()}
+                />
+                <Button size="sm" onClick={handleAddColumn} className="h-7 text-xs">添加</Button>
+                <Button variant="ghost" size="sm" onClick={() => { setShowNewColumn(false); setNewColumnTitle('') }} className="h-7 text-xs">取消</Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNewColumn(true)}
+                className="flex-shrink-0 text-xs gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                添加列
+              </Button>
+            )}
           </div>
           <DragOverlay>
             {activeId && getInspiration(activeId) && (

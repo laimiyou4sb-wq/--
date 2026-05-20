@@ -109,24 +109,48 @@ export default function InspirationDetailPage() {
 
   const handleTogglePin = async () => {
     if (!inspiration) return
-    await saveInspiration({ ...inspiration, isPinned: !inspiration.isPinned })
-    addToast(inspiration.isPinned ? '已取消置顶' : '已置顶', 'success')
+    try {
+      await saveInspiration({ ...inspiration, isPinned: !inspiration.isPinned })
+      addToast(inspiration.isPinned ? '已取消置顶' : '已置顶', 'success')
+    } catch {
+      addToast('操作失败，请重试', 'error')
+    }
   }
 
   const handleDelete = async () => {
     if (!confirm('确定要删除这条灵感吗？')) return
-    await deleteInspiration(inspiration.id)
-    addToast('灵感已删除', 'success')
-    navigate('/browse')
+    try {
+      await deleteInspiration(inspiration.id)
+      addToast('灵感已删除', 'success')
+      navigate('/browse')
+    } catch {
+      addToast('删除失败，请重试', 'error')
+    }
   }
 
   const handleAddConnection = async () => {
     if (!connectionTarget) return
-    await addConnection(inspiration.id, connectionTarget, connectionRelation, connectionNote || undefined)
-    addToast('关联已创建', 'success')
-    setShowAddConnection(false)
-    setConnectionTarget('')
-    setConnectionNote('')
+    try {
+      await addConnection(inspiration.id, connectionTarget, connectionRelation, connectionNote || undefined)
+      addToast('关联已创建', 'success')
+      setShowAddConnection(false)
+      setConnectionTarget('')
+      setConnectionNote('')
+    } catch {
+      addToast('添加关联失败', 'error')
+    }
+  }
+
+  const handleToggleAction = async (itemId: string) => {
+    if (!inspiration) return
+    try {
+      const updated = inspiration.actionItems.map((a) =>
+        a.id === itemId ? { ...a, completed: !a.completed } : a
+      )
+      await saveInspiration({ ...inspiration, actionItems: updated })
+    } catch {
+      addToast('操作失败', 'error')
+    }
   }
 
   return (
@@ -262,14 +286,18 @@ export default function InspirationDetailPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {inspiration.actionItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 text-sm">
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                    onClick={() => handleToggleAction(item.id)}
+                  >
                     <div
                       className={cn(
-                        'h-4 w-4 rounded border flex items-center justify-center',
-                        item.completed && 'bg-primary border-primary'
+                        'h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors',
+                        item.completed ? 'bg-primary border-primary' : 'hover:border-primary/50'
                       )}
                     >
-                      {item.completed && <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
+                      {item.completed && <svg className="h-3 w-3 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>}
                     </div>
                     <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
                       {item.text}

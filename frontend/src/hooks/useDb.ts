@@ -16,56 +16,90 @@ export function useInspiration(id: string | undefined) {
 export async function saveInspiration(
   data: Partial<Inspiration> & { title: string }
 ): Promise<Inspiration> {
-  const now = new Date().toISOString()
-  const inspiration: Inspiration = {
-    id: data.id || generateId(),
-    title: data.title,
-    type: data.type || 'seed',
-    status: data.status || 'thinking',
-    description: data.description,
-    source: data.source,
-    context: data.context,
-    tags: data.tags || [],
-    links: data.links || [],
-    resources: data.resources || [],
-    actionItems: data.actionItems || [],
-    connections: data.connections || [],
-    createdAt: data.createdAt || now,
-    updatedAt: now,
-    lastViewedAt: data.lastViewedAt,
-    viewCount: data.viewCount || 0,
-    isPinned: data.isPinned || false,
+  try {
+    const now = new Date().toISOString()
+    const inspiration: Inspiration = {
+      id: data.id || generateId(),
+      title: data.title,
+      type: data.type || 'seed',
+      status: data.status || 'thinking',
+      description: data.description,
+      source: data.source,
+      context: data.context,
+      tags: data.tags || [],
+      links: data.links || [],
+      resources: data.resources || [],
+      actionItems: data.actionItems || [],
+      connections: data.connections || [],
+      createdAt: data.createdAt || now,
+      updatedAt: now,
+      lastViewedAt: data.lastViewedAt,
+      viewCount: data.viewCount || 0,
+      isPinned: data.isPinned || false,
+    }
+    await db.inspirations.put(inspiration)
+    return inspiration
+  } catch (e) {
+    throw new Error(`保存灵感失败: ${e instanceof Error ? e.message : '未知错误'}`)
   }
-  await db.inspirations.put(inspiration)
-  return inspiration
 }
 
 export async function deleteInspiration(id: string): Promise<void> {
-  // Remove connections from other inspirations
-  const all = await db.inspirations.toArray()
-  for (const insp of all) {
-    const filtered = insp.connections.filter((c) => c.targetId !== id)
-    if (filtered.length !== insp.connections.length) {
-      await db.inspirations.update(insp.id, { connections: filtered, updatedAt: new Date().toISOString() })
+  try {
+    // Remove connections from other inspirations
+    const all = await db.inspirations.toArray()
+    for (const insp of all) {
+      const filtered = insp.connections.filter((c) => c.targetId !== id)
+      if (filtered.length !== insp.connections.length) {
+        await db.inspirations.update(insp.id, { connections: filtered, updatedAt: new Date().toISOString() })
+      }
     }
+    // Remove from board columns
+    const boards = await db.boards.toArray()
+    for (const board of boards) {
+      const updatedColumns = board.columns.map((col) => ({
+        ...col,
+        inspirationIds: col.inspirationIds.filter((iid) => iid !== id),
+      }))
+      if (updatedColumns.some((col, i) => col.inspirationIds.length !== board.columns[i].inspirationIds.length)) {
+        await db.boards.update(board.id, { columns: updatedColumns, updatedAt: new Date().toISOString() })
+      }
+    }
+    // Remove from diary entries
+    const diaries = await db.diaryEntries.toArray()
+    for (const entry of diaries) {
+      if (entry.linkedInspirationIds.includes(id)) {
+        await db.diaryEntries.update(entry.id, {
+          linkedInspirationIds: entry.linkedInspirationIds.filter((iid) => iid !== id),
+          updatedAt: new Date().toISOString(),
+        })
+      }
+    }
+    await db.inspirations.delete(id)
+  } catch (e) {
+    throw new Error(`删除灵感失败: ${e instanceof Error ? e.message : '未知错误'}`)
   }
-  await db.inspirations.delete(id)
 }
 
 const lastViewedMap = new Map<string, number>()
 
 export async function viewInspiration(id: string): Promise<void> {
-  const now = Date.now()
-  const lastView = lastViewedMap.get(id) || 0
-  if (now - lastView < 5000) return
+  try {
+    const now = Date.now()
+    const lastView = lastViewedMap.get(id) || 0
+    if (now - lastView < 5000) return
 
-  const insp = await db.inspirations.get(id)
-  if (insp) {
-    await db.inspirations.update(id, {
-      viewCount: (insp.viewCount || 0) + 1,
-      lastViewedAt: new Date().toISOString(),
-    })
-    lastViewedMap.set(id, now)
+    const insp = await db.inspirations.get(id)
+    if (insp) {
+      await db.inspirations.update(id, {
+        viewCount: (insp.viewCount || 0) + 1,
+        lastViewedAt: new Date().toISOString(),
+      })
+      lastViewedMap.set(id, now)
+    }
+  } catch (e) {
+    // View count failure is non-critical, log and swallow
+    console.error('更新查看计数失败:', e)
   }
 }
 
@@ -75,21 +109,24 @@ export async function addConnection(
   relation: Inspiration['connections'][0]['relation'],
   note?: string
 ): Promise<void> {
-  const insp = await db.inspirations.get(sourceId)
-  if (!insp) return
-  const newConn = {
-    id: generateId(),
-    targetId,
-    relation,
-    note,
-    createdAt: new Date().toISOString(),
+  try {
+    const insp = await db.inspirations.get(sourceId)
+    if (!insp) return
+    const newConn = {
+      id: generateId(),
+      targetId,
+      relation,
+      note,
+      createdAt: new Date().toISOString(),
+    }
+    if (insp.connections.some((c) => c.targetId === targetId)) return
+    await db.inspirations.update(sourceId, {
+      connections: [...insp.connections, newConn],
+      updatedAt: new Date().toISOString(),
+    })
+  } catch (e) {
+    throw new Error(`添加关联失败: ${e instanceof Error ? e.message : '未知错误'}`)
   }
-  // Avoid duplicates
-  if (insp.connections.some((c) => c.targetId === targetId)) return
-  await db.inspirations.update(sourceId, {
-    connections: [...insp.connections, newConn],
-    updatedAt: new Date().toISOString(),
-  })
 }
 
 // Board CRUD
@@ -102,26 +139,34 @@ export function useBoard(id: string | undefined) {
 }
 
 export async function saveBoard(data: Partial<Board> & { title: string }): Promise<Board> {
-  const now = new Date().toISOString()
-  const board: Board = {
-    id: data.id || generateId(),
-    title: data.title,
-    description: data.description,
-    columns: data.columns || [
-      { id: generateId(), title: '收集', inspirationIds: [] },
-      { id: generateId(), title: '筛选中', inspirationIds: [] },
-      { id: generateId(), title: '执行中', inspirationIds: [] },
-      { id: generateId(), title: '已完成', inspirationIds: [] },
-    ],
-    createdAt: data.createdAt || now,
-    updatedAt: now,
+  try {
+    const now = new Date().toISOString()
+    const board: Board = {
+      id: data.id || generateId(),
+      title: data.title,
+      description: data.description,
+      columns: data.columns || [
+        { id: generateId(), title: '收集', inspirationIds: [] },
+        { id: generateId(), title: '筛选中', inspirationIds: [] },
+        { id: generateId(), title: '执行中', inspirationIds: [] },
+        { id: generateId(), title: '已完成', inspirationIds: [] },
+      ],
+      createdAt: data.createdAt || now,
+      updatedAt: now,
+    }
+    await db.boards.put(board)
+    return board
+  } catch (e) {
+    throw new Error(`保存看板失败: ${e instanceof Error ? e.message : '未知错误'}`)
   }
-  await db.boards.put(board)
-  return board
 }
 
 export async function deleteBoard(id: string): Promise<void> {
-  await db.boards.delete(id)
+  try {
+    await db.boards.delete(id)
+  } catch (e) {
+    throw new Error(`删除看板失败: ${e instanceof Error ? e.message : '未知错误'}`)
+  }
 }
 
 // Diary CRUD
@@ -136,19 +181,23 @@ export function useDiaryEntry(date: string | undefined) {
 export async function saveDiaryEntry(
   data: Partial<DiaryEntry> & { date: string; content: string }
 ): Promise<DiaryEntry> {
-  const now = new Date().toISOString()
-  const existing = await db.diaryEntries.where('date').equals(data.date).first()
-  const entry: DiaryEntry = {
-    id: existing?.id || generateId(),
-    date: data.date,
-    content: data.content,
-    mood: data.mood,
-    linkedInspirationIds: data.linkedInspirationIds || [],
-    createdAt: existing?.createdAt || now,
-    updatedAt: now,
+  try {
+    const now = new Date().toISOString()
+    const existing = await db.diaryEntries.where('date').equals(data.date).first()
+    const entry: DiaryEntry = {
+      id: existing?.id || generateId(),
+      date: data.date,
+      content: data.content,
+      mood: data.mood,
+      linkedInspirationIds: data.linkedInspirationIds || [],
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    }
+    await db.diaryEntries.put(entry)
+    return entry
+  } catch (e) {
+    throw new Error(`保存日记失败: ${e instanceof Error ? e.message : '未知错误'}`)
   }
-  await db.diaryEntries.put(entry)
-  return entry
 }
 
 // Settings
@@ -160,19 +209,23 @@ export function useSettings() {
 }
 
 export async function saveSettings(data: Partial<AppSettings>): Promise<void> {
-  const existing = await db.settings.get('app')
-  const defaults: AppSettings = {
-    theme: 'system',
-    sidebarCollapsed: false,
-    dailyNotificationEnabled: false,
-    dailyNotificationTime: '08:00',
-    autoBackupEnabled: true,
-    apiBaseUrl: 'https://api.openai.com/v1',
-    apiKey: '',
-    apiModel: 'gpt-4o-mini',
+  try {
+    const existing = await db.settings.get('app')
+    const defaults: AppSettings = {
+      theme: 'system',
+      sidebarCollapsed: false,
+      dailyNotificationEnabled: false,
+      dailyNotificationTime: '08:00',
+      autoBackupEnabled: true,
+      apiBaseUrl: 'https://api.openai.com/v1',
+      apiKey: '',
+      apiModel: 'gpt-4o-mini',
+    }
+    const settings = { ...defaults, ...existing, ...data, id: 'app' }
+    await db.settings.put(settings)
+  } catch (e) {
+    throw new Error(`保存设置失败: ${e instanceof Error ? e.message : '未知错误'}`)
   }
-  const settings = { ...defaults, ...existing, ...data, id: 'app' }
-  await db.settings.put(settings)
 }
 
 // Seed data initialization
@@ -191,14 +244,22 @@ export function useSavedFilters() {
 }
 
 export async function saveFilter(name: string, filter: any): Promise<void> {
-  await db.savedFilters.put({
-    id: generateId(),
-    name,
-    filter,
-    createdAt: new Date().toISOString(),
-  })
+  try {
+    await db.savedFilters.put({
+      id: generateId(),
+      name,
+      filter,
+      createdAt: new Date().toISOString(),
+    })
+  } catch (e) {
+    throw new Error(`保存过滤器失败: ${e instanceof Error ? e.message : '未知错误'}`)
+  }
 }
 
 export async function deleteFilter(id: string): Promise<void> {
-  await db.savedFilters.delete(id)
+  try {
+    await db.savedFilters.delete(id)
+  } catch (e) {
+    throw new Error(`删除过滤器失败: ${e instanceof Error ? e.message : '未知错误'}`)
+  }
 }

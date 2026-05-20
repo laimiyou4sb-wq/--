@@ -49,31 +49,39 @@ export default function CapturePage() {
 
   const handleSave = async () => {
     if (!title.trim()) return
-    await saveInspiration({
-      id: existing?.id,
-      title: title.trim(),
-      type,
-      status,
-      description: description.trim() || undefined,
-      source: source.trim() || undefined,
-      context: context.trim() || undefined,
-      tags,
-      links,
-      actionItems,
-      connections: existing?.connections,
-      createdAt: existing?.createdAt,
-      isPinned: existing?.isPinned,
-    })
-    addToast(existing ? '灵感已更新' : '灵感已创建', 'success')
-    navigate(-1)
+    try {
+      await saveInspiration({
+        id: existing?.id,
+        title: title.trim(),
+        type,
+        status,
+        description: description.trim() || undefined,
+        source: source.trim() || undefined,
+        context: context.trim() || undefined,
+        tags,
+        links,
+        actionItems,
+        connections: existing?.connections,
+        createdAt: existing?.createdAt,
+        isPinned: existing?.isPinned,
+      })
+      addToast(existing ? '灵感已更新' : '灵感已创建', 'success')
+      navigate(-1)
+    } catch {
+      addToast('保存失败，请重试', 'error')
+    }
   }
 
   const handleDelete = async () => {
     if (!existing?.id) return
     if (!confirm('确定要删除这条灵感吗？')) return
-    await deleteInspiration(existing.id)
-    addToast('灵感已删除', 'success')
-    navigate('/browse')
+    try {
+      await deleteInspiration(existing.id)
+      addToast('灵感已删除', 'success')
+      navigate('/browse')
+    } catch {
+      addToast('删除失败，请重试', 'error')
+    }
   }
 
   const addLink = () => {
