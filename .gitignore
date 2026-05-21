@@ -36,3 +36,13 @@ backend/dist/
 # Electron build output
 frontend/release/
 *.exe
+
+# Claude Code (local settings, may contain API keys)
+.claude/
+
+# Test artifacts
+frontend/test-results/
+
+# Screenshots / local assets
+screenshots/
+*.local

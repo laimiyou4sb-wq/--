@@ -80,7 +80,7 @@ export default function BrowsePage() {
               className="pl-8 h-8 text-sm"
             />
           </div>
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as InspirationType | 'all')}>
             <SelectTrigger className="h-8 w-[90px] text-xs">
               <SelectValue placeholder="类型" />
             </SelectTrigger>
@@ -90,7 +90,7 @@ export default function BrowsePage() {
               <SelectItem value="mature">成熟</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as InspirationStatus | 'all')}>
             <SelectTrigger className="h-8 w-[90px] text-xs">
               <SelectValue placeholder="状态" />
             </SelectTrigger>

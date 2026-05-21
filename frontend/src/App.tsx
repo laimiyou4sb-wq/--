@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet } from 'react-router-dom'
+import { createHashRouter, Outlet } from 'react-router-dom'
 import { lazy, Suspense, useEffect } from 'react'
 import { useUIStore } from '@/stores/ui'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -102,7 +102,7 @@ function AppShell() {
   )
 }
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: '/',
     element: <AppShell />,

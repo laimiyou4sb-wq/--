@@ -19,18 +19,26 @@ export default function BoardsPage() {
 
   const handleCreate = async () => {
     if (!newTitle.trim()) return
-    const board = await saveBoard({ title: newTitle.trim() })
-    addToast('看板已创建', 'success')
-    setShowCreate(false)
-    setNewTitle('')
-    navigate(`/boards/${board.id}`)
+    try {
+      const board = await saveBoard({ title: newTitle.trim() })
+      addToast('看板已创建', 'success')
+      setShowCreate(false)
+      setNewTitle('')
+      navigate(`/boards/${board.id}`)
+    } catch {
+      addToast('创建看板失败，请重试', 'error')
+    }
   }
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!confirm('确定要删除这个看板吗？')) return
-    await deleteBoard(id)
-    addToast('看板已删除', 'success')
+    try {
+      await deleteBoard(id)
+      addToast('看板已删除', 'success')
+    } catch {
+      addToast('删除看板失败，请重试', 'error')
+    }
   }
 
   return (

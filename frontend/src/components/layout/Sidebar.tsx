@@ -43,7 +43,7 @@ export function Sidebar() {
             <div className="h-7 w-7 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center transition-transform duration-200 hover:scale-110">
               <Lightbulb className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-sm tracking-tight">灵感库</span>
+            <span className="font-semibold text-sm tracking-tight">灵感知识库</span>
           </div>
         )}
         {!sidebarOpen && (

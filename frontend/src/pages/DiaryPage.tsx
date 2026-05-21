@@ -52,13 +52,17 @@ export default function DiaryPage() {
 
   const handleSave = async () => {
     if (!content.trim()) return
-    await saveDiaryEntry({
-      date: selectedDate,
-      content: content.trim(),
-      mood,
-      linkedInspirationIds: currentEntry?.linkedInspirationIds || [],
-    })
-    addToast('日记已保存', 'success')
+    try {
+      await saveDiaryEntry({
+        date: selectedDate,
+        content: content.trim(),
+        mood,
+        linkedInspirationIds: currentEntry?.linkedInspirationIds || [],
+      })
+      addToast('日记已保存', 'success')
+    } catch {
+      addToast('保存失败，请重试', 'error')
+    }
   }
 
   const handleLinkInspiration = async (inspId: string) => {
@@ -66,13 +70,17 @@ export default function DiaryPage() {
     const newLinked = linked.includes(inspId)
       ? linked.filter((id) => id !== inspId)
       : [...linked, inspId]
-    await saveDiaryEntry({
-      date: selectedDate,
-      content: content.trim(),
-      mood,
-      linkedInspirationIds: newLinked,
-    })
-    addToast('关联已更新', 'success')
+    try {
+      await saveDiaryEntry({
+        date: selectedDate,
+        content: content.trim(),
+        mood,
+        linkedInspirationIds: newLinked,
+      })
+      addToast('关联已更新', 'success')
+    } catch {
+      addToast('操作失败，请重试', 'error')
+    }
   }
 
   const linkedInspirations = allInspirations.filter(

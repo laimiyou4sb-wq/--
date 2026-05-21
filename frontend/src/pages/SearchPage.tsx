@@ -202,7 +202,7 @@ export default function SearchPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium mb-1.5 block">状态</label>
-                <Select value={status} onValueChange={(v) => setStatus(v as any)}>
+                <Select value={status} onValueChange={(v) => setStatus(v as InspirationStatus | 'all')}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -217,7 +217,7 @@ export default function SearchPage() {
               </div>
               <div>
                 <label className="text-xs font-medium mb-1.5 block">类型</label>
-                <Select value={type} onValueChange={(v) => setType(v as any)}>
+                <Select value={type} onValueChange={(v) => setType(v as InspirationType | 'all')}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
