@@ -33,8 +33,11 @@ frontend/dist/
 # Backend
 backend/dist/
 
-# Electron build output
+# Electron build output (legacy)
 frontend/release/
+
+# Tauri build output
+frontend/src-tauri/target/
 *.exe
 
 # Claude Code (local settings, may contain API keys)
