@@ -28,6 +28,6 @@ export const STORAGE_KEYS = {
 }
 
 export const MAX_SEARCH_HISTORY = 20
-export const DAILY_INSPIRATION_COUNT = 3
+
 export const FORGOTTEN_DAYS_THRESHOLD = 30
 export const TIME_CAPSULE_MONTHS = [1, 6, 12] // 1 month, 6 months, 12 months ago

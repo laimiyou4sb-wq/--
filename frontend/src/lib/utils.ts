@@ -38,11 +38,6 @@ export function generateId(): string {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
-export function truncate(str: string, length: number): string {
-  if (str.length <= length) return str
-  return str.slice(0, length) + '...'
-}
-
 export const STATUS_LABELS: Record<string, string> = {
   thinking: '思考中',
   developing: '发展',

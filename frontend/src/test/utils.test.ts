@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cn, formatDate, generateId, truncate, STATUS_LABELS, STATUS_COLORS, TYPE_LABELS, RELATION_LABELS, MOOD_LABELS } from '@/lib/utils'
+import { cn, formatDate, generateId, STATUS_LABELS, STATUS_COLORS, TYPE_LABELS, RELATION_LABELS, MOOD_LABELS } from '@/lib/utils'
 
 describe('cn', () => {
   it('合并类名', () => {
@@ -75,24 +75,6 @@ describe('generateId', () => {
     const ids = Array.from({ length: 10 }, () => generateId())
     const unique = new Set(ids)
     expect(unique.size).toBe(10)
-  })
-})
-
-describe('truncate', () => {
-  it('短文本直接返回', () => {
-    expect(truncate('hello', 10)).toBe('hello')
-  })
-
-  it('超长文本截断并加省略号', () => {
-    expect(truncate('hello world', 5)).toBe('hello...')
-  })
-
-  it('恰好等长直接返回', () => {
-    expect(truncate('hello', 5)).toBe('hello')
-  })
-
-  it('空字符串', () => {
-    expect(truncate('', 5)).toBe('')
   })
 })
 
