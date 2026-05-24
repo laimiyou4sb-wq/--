@@ -80,10 +80,10 @@ describe('generateId', () => {
 
 describe('常量映射', () => {
   it('STATUS_LABELS 包含所有状态', () => {
-    expect(STATUS_LABELS).toHaveProperty('thinking', '思考中')
-    expect(STATUS_LABELS).toHaveProperty('developing', '发展')
+    expect(STATUS_LABELS).toHaveProperty('thinking', '正在思考')
+    expect(STATUS_LABELS).toHaveProperty('developing', '待发展')
     expect(STATUS_LABELS).toHaveProperty('applied', '已应用')
-    expect(STATUS_LABELS).toHaveProperty('archived', '归档')
+    expect(STATUS_LABELS).toHaveProperty('archived', '已归档')
   })
 
   it('STATUS_COLORS 包含所有状态', () => {

@@ -39,10 +39,10 @@ export function generateId(): string {
 }
 
 export const STATUS_LABELS: Record<string, string> = {
-  thinking: '思考中',
-  developing: '发展',
+  developing: '待发展',
+  thinking: '正在思考',
   applied: '已应用',
-  archived: '归档',
+  archived: '已归档',
 }
 
 export const STATUS_COLORS: Record<string, string> = {

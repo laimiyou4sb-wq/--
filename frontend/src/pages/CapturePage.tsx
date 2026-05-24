@@ -149,8 +149,8 @@ export default function CapturePage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="thinking">待思考</SelectItem>
-                  <SelectItem value="developing">正在发展</SelectItem>
+                  <SelectItem value="thinking">正在思考</SelectItem>
+                  <SelectItem value="developing">待发展</SelectItem>
                   <SelectItem value="applied">已应用</SelectItem>
                   <SelectItem value="archived">已归档</SelectItem>
                 </SelectContent>

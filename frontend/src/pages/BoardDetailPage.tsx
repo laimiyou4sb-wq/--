@@ -1,15 +1,15 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useBoard, useInspirations, saveBoard } from '@/hooks/useDb'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useBoard, useInspirations, saveBoard, saveInspiration } from '@/hooks/useDb'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { useUIStore } from '@/stores/ui'
-import { ArrowLeft, Plus, GripVertical, Trash2, MoreHorizontal } from 'lucide-react'
+import { ArrowLeft, Plus } from 'lucide-react'
 import {
   DndContext,
   DragOverlay,
   closestCorners,
+  useDroppable,
   type DragStartEvent,
   type DragEndEvent,
   useSensor,
@@ -23,9 +23,10 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useState } from 'react'
-import { cn, formatDate, STATUS_COLORS, STATUS_LABELS } from '@/lib/utils'
-import { generateId } from '@/lib/utils'
-import type { Inspiration } from '@/types'
+import { cn, STATUS_COLORS, STATUS_LABELS } from '@/lib/utils'
+import type { Inspiration, InspirationStatus } from '@/types'
+
+const FIXED_COLUMNS: InspirationStatus[] = ['developing', 'thinking', 'applied', 'archived']
 
 function SortableCard({ inspiration }: { inspiration: Inspiration }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -62,38 +63,40 @@ function SortableCard({ inspiration }: { inspiration: Inspiration }) {
   )
 }
 
-interface ColumnProps {
-  column: { id: string; title: string; inspirationIds: string[] }
+function Column({
+  status,
+  inspirations,
+  isAddingCard,
+  newCardTitle,
+  onNewCardTitleChange,
+  onAddCard,
+  onStartAddCard,
+}: {
+  status: InspirationStatus
   inspirations: Inspiration[]
   isAddingCard: boolean
   newCardTitle: string
   onNewCardTitleChange: (v: string) => void
   onAddCard: () => void
   onStartAddCard: () => void
-  onDeleteColumn: () => void
-}
+}) {
+  const { setNodeRef } = useDroppable({ id: `col-${status}` })
 
-function Column({ column, inspirations, isAddingCard, newCardTitle, onNewCardTitleChange, onAddCard, onStartAddCard, onDeleteColumn }: ColumnProps) {
   return (
-    <div className="flex-shrink-0 w-72 flex flex-col bg-muted/30 rounded-xl">
+    <div ref={setNodeRef} className="flex-shrink-0 w-72 flex flex-col bg-muted/30 rounded-xl">
       <div className="flex items-center justify-between p-3 pb-2">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium">{column.title}</h3>
+          <h3 className="text-sm font-medium">{STATUS_LABELS[status]}</h3>
           <Badge variant="secondary" className="text-[10px] py-0 h-4">
             {inspirations.length}
           </Badge>
         </div>
-        <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon-sm" onClick={onStartAddCard}>
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" onClick={onDeleteColumn}>
-            <MoreHorizontal className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        <Button variant="ghost" size="icon-sm" onClick={onStartAddCard}>
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
       </div>
       <div className="flex-1 p-2 space-y-2 min-h-[100px]">
-        <SortableContext items={column.inspirationIds} strategy={verticalListSortingStrategy}>
+        <SortableContext items={inspirations.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           {inspirations.map((insp) => (
             <SortableCard key={insp.id} inspiration={insp} />
           ))}
@@ -128,11 +131,7 @@ export default function BoardDetailPage() {
   const navigate = useNavigate()
   const addToast = useUIStore((s) => s.addToast)
   const [activeId, setActiveId] = useState<string | null>(null)
-
-  // Inline editing state — replaces prompt()
-  const [showNewColumn, setShowNewColumn] = useState(false)
-  const [newColumnTitle, setNewColumnTitle] = useState('')
-  const [addingToColumnId, setAddingToColumnId] = useState<string | null>(null)
+  const [addingToStatus, setAddingToStatus] = useState<InspirationStatus | null>(null)
   const [newCardTitle, setNewCardTitle] = useState('')
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
@@ -145,7 +144,17 @@ export default function BoardDetailPage() {
     )
   }
 
+  const boardInspirationIds = new Set<string>()
+  board.columns.forEach((col) => col.inspirationIds.forEach((id) => boardInspirationIds.add(id)))
+
   const getInspiration = (inspId: string) => allInspirations.find((i) => i.id === inspId)
+
+  const getTargetStatus = (overId: string): InspirationStatus | null => {
+    const colMatch = overId.match(/^col-(.+)$/)
+    if (colMatch) return colMatch[1] as InspirationStatus
+    const overInsp = getInspiration(overId)
+    return overInsp?.status || null
+  }
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string)
@@ -156,70 +165,37 @@ export default function BoardDetailPage() {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const activeId = active.id as string
-    const overId = over.id as string
+    const targetStatus = getTargetStatus(over.id as string)
+    if (!targetStatus) return
 
-    const sourceCol = board.columns.find((c) => c.inspirationIds.includes(activeId))
-    if (!sourceCol) return
-
-    const targetCol = board.columns.find((c) => c.inspirationIds.includes(overId))
-
-    const newColumns = board.columns.map((col) => {
-      if (sourceCol.id === col.id && targetCol && targetCol.id === col.id) {
-        // Same column reorder
-        const ids = [...col.inspirationIds]
-        const fromIdx = ids.indexOf(activeId)
-        const toIdx = ids.indexOf(overId)
-        ids.splice(fromIdx, 1)
-        ids.splice(toIdx, 0, activeId)
-        return { ...col, inspirationIds: ids }
-      }
-      if (col.id === sourceCol.id) {
-        return { ...col, inspirationIds: col.inspirationIds.filter((i) => i !== activeId) }
-      }
-      if (targetCol && col.id === targetCol.id) {
-        const ids = [...col.inspirationIds]
-        const toIdx = ids.indexOf(overId)
-        ids.splice(toIdx, 0, activeId)
-        return { ...col, inspirationIds: ids }
-      }
-      return col
-    })
+    const activeInsp = getInspiration(active.id as string)
+    if (!activeInsp || activeInsp.status === targetStatus) return
 
     try {
-      await saveBoard({ ...board, columns: newColumns })
+      await saveInspiration({ ...activeInsp, status: targetStatus })
     } catch {
       addToast('移动失败，请重试', 'error')
     }
   }
 
-  const handleAddColumn = async () => {
-    const title = newColumnTitle.trim()
-    if (!title) return
-    try {
-      const newCol = { id: generateId(), title, inspirationIds: [] }
-      await saveBoard({ ...board, columns: [...board.columns, newCol] })
-      addToast('列已添加', 'success')
-      setNewColumnTitle('')
-      setShowNewColumn(false)
-    } catch {
-      addToast('添加列失败', 'error')
-    }
-  }
-
-  const handleAddCardToColumn = async (columnId: string) => {
+  const handleAddCard = async (status: InspirationStatus) => {
     const title = newCardTitle.trim()
     if (!title) return
     try {
-      const { saveInspiration } = await import('@/hooks/useDb')
-      const insp = await saveInspiration({ title, type: 'seed', status: 'thinking' })
-      const updatedColumns = board.columns.map((col) =>
-        col.id === columnId ? { ...col, inspirationIds: [...col.inspirationIds, insp.id] } : col
+      const insp = await saveInspiration({ title, type: 'seed', status })
+      const colId = `col-${status}`
+      const newColumns = board.columns.map((col) =>
+        col.id === colId
+          ? { ...col, inspirationIds: [...col.inspirationIds, insp.id] }
+          : col
       )
-      await saveBoard({ ...board, columns: updatedColumns })
+      if (!newColumns.some((col) => col.id === colId)) {
+        newColumns.push({ id: colId, title: STATUS_LABELS[status], inspirationIds: [insp.id] })
+      }
+      await saveBoard({ ...board, columns: newColumns })
       addToast('卡片已添加', 'success')
       setNewCardTitle('')
-      setAddingToColumnId(null)
+      setAddingToStatus(null)
     } catch {
       addToast('添加卡片失败', 'error')
     }
@@ -247,57 +223,26 @@ export default function BoardDetailPage() {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-4 items-start min-h-full">
-            {board.columns.map((col) => (
-              <Column
-                key={col.id}
-                column={col}
-                inspirations={col.inspirationIds.map(getInspiration).filter(Boolean) as Inspiration[]}
-                isAddingCard={addingToColumnId === col.id}
-                newCardTitle={addingToColumnId === col.id ? newCardTitle : ''}
-                onNewCardTitleChange={(v) => setNewCardTitle(v)}
-                onAddCard={() => handleAddCardToColumn(col.id)}
-                onStartAddCard={() => {
-                  setAddingToColumnId(col.id)
-                  setNewCardTitle('')
-                }}
-                onDeleteColumn={async () => {
-                  if (!confirm('删除此列？')) return
-                  try {
-                    await saveBoard({
-                      ...board,
-                      columns: board.columns.filter((c) => c.id !== col.id),
-                    })
-                  } catch {
-                    addToast('删除列失败', 'error')
-                  }
-                }}
-              />
-            ))}
-            {/* Add column inline */}
-            {showNewColumn ? (
-              <div className="flex-shrink-0 w-72 flex gap-1.5 p-3 bg-muted/30 rounded-xl">
-                <Input
-                  value={newColumnTitle}
-                  onChange={(e) => setNewColumnTitle(e.target.value)}
-                  placeholder="列名称..."
-                  className="h-7 text-xs"
-                  autoFocus
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddColumn()}
+            {FIXED_COLUMNS.map((status) => {
+              const colInspirations = allInspirations.filter(
+                (i) => boardInspirationIds.has(i.id) && i.status === status
+              )
+              return (
+                <Column
+                  key={status}
+                  status={status}
+                  inspirations={colInspirations}
+                  isAddingCard={addingToStatus === status}
+                  newCardTitle={addingToStatus === status ? newCardTitle : ''}
+                  onNewCardTitleChange={(v) => setNewCardTitle(v)}
+                  onAddCard={() => handleAddCard(status)}
+                  onStartAddCard={() => {
+                    setAddingToStatus(status)
+                    setNewCardTitle('')
+                  }}
                 />
-                <Button size="sm" onClick={handleAddColumn} className="h-7 text-xs">添加</Button>
-                <Button variant="ghost" size="sm" onClick={() => { setShowNewColumn(false); setNewColumnTitle('') }} className="h-7 text-xs">取消</Button>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowNewColumn(true)}
-                className="flex-shrink-0 text-xs gap-1"
-              >
-                <Plus className="h-3 w-3" />
-                添加列
-              </Button>
-            )}
+              )
+            })}
           </div>
           <DragOverlay>
             {activeId && getInspiration(activeId) && (

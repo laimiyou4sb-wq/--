@@ -208,8 +208,8 @@ export default function SearchPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全部</SelectItem>
-                    <SelectItem value="thinking">思考中</SelectItem>
-                    <SelectItem value="developing">发展中</SelectItem>
+                    <SelectItem value="thinking">正在思考</SelectItem>
+                    <SelectItem value="developing">待发展</SelectItem>
                     <SelectItem value="applied">已应用</SelectItem>
                     <SelectItem value="archived">已归档</SelectItem>
                   </SelectContent>
