@@ -27,6 +27,10 @@ npm run tauri:build # Production build → src-tauri/target/release/
 - **Domain data** (inspirations, boards, diaries, filters, settings) — IndexedDB via Dexie, accessed through `useLiveQuery` hooks in `src/hooks/useDb.ts`. No React Context or Zustand for server data.
 - **UI state** (theme, sidebar, command palette, toasts, search) — Zustand store in `src/stores/ui.ts`
 
+### 层级关系
+
+看板功能 > 看板 > 灵感：一个看板功能下可创建多个看板，每个看板包含多张灵感卡片。灵感通过状态（developing/thinking/applied/archived）分布在看板的固定四列中。
+
 ### Key patterns
 
 - **Reactive queries**: Every `useDb` hook uses `useLiveQuery()` from dexie-react-hooks — any IndexedDB write automatically re-renders subscribed components.

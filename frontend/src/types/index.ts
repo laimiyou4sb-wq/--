@@ -62,6 +62,7 @@ export interface Board {
   title: string
   description?: string
   columns: BoardColumn[]
+  order?: number
   createdAt: string
   updatedAt: string
 }

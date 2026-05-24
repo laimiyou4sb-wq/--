@@ -134,6 +134,16 @@ export function useBoards() {
   return useLiveQuery(() => db.boards.orderBy('updatedAt').reverse().toArray()) || []
 }
 
+export function useBoardsSorted() {
+  const boards = useBoards()
+  return [...boards].sort((a, b) => {
+    if (a.order !== undefined && b.order !== undefined) return a.order - b.order
+    if (a.order !== undefined) return -1
+    if (b.order !== undefined) return 1
+    return 0
+  })
+}
+
 export function useBoard(id: string | undefined) {
   return useLiveQuery(() => (id ? db.boards.get(id) : undefined), [id])
 }
@@ -151,6 +161,7 @@ export async function saveBoard(data: Partial<Board> & { title: string }): Promi
         { id: 'col-applied', title: '已应用', inspirationIds: [] },
         { id: 'col-archived', title: '已归档', inspirationIds: [] },
       ],
+      order: data.order,
       createdAt: data.createdAt || now,
       updatedAt: now,
     }

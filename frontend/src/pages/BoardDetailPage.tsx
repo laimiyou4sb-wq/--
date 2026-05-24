@@ -28,7 +28,13 @@ import type { Inspiration, InspirationStatus } from '@/types'
 
 const FIXED_COLUMNS: InspirationStatus[] = ['developing', 'thinking', 'applied', 'archived']
 
-function SortableCard({ inspiration }: { inspiration: Inspiration }) {
+function SortableCard({
+  inspiration,
+  onOpenInspiration,
+}: {
+  inspiration: Inspiration
+  onOpenInspiration: (id: string) => void
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: inspiration.id })
 
@@ -47,6 +53,7 @@ function SortableCard({ inspiration }: { inspiration: Inspiration }) {
       )}
       {...attributes}
       {...listeners}
+      onDoubleClick={() => onOpenInspiration(inspiration.id)}
     >
       <p className="text-xs font-medium leading-tight line-clamp-2">{inspiration.title}</p>
       <div className="flex items-center gap-1 mt-1.5 flex-wrap">
@@ -71,6 +78,7 @@ function Column({
   onNewCardTitleChange,
   onAddCard,
   onStartAddCard,
+  onOpenInspiration,
 }: {
   status: InspirationStatus
   inspirations: Inspiration[]
@@ -79,6 +87,7 @@ function Column({
   onNewCardTitleChange: (v: string) => void
   onAddCard: () => void
   onStartAddCard: () => void
+  onOpenInspiration: (id: string) => void
 }) {
   const { setNodeRef } = useDroppable({ id: `col-${status}` })
 
@@ -98,7 +107,7 @@ function Column({
       <div className="flex-1 p-2 space-y-2 min-h-[100px]">
         <SortableContext items={inspirations.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           {inspirations.map((insp) => (
-            <SortableCard key={insp.id} inspiration={insp} />
+            <SortableCard key={insp.id} inspiration={insp} onOpenInspiration={onOpenInspiration} />
           ))}
         </SortableContext>
         {inspirations.length === 0 && !isAddingCard && (
@@ -133,6 +142,8 @@ export default function BoardDetailPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [addingToStatus, setAddingToStatus] = useState<InspirationStatus | null>(null)
   const [newCardTitle, setNewCardTitle] = useState('')
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -201,14 +212,56 @@ export default function BoardDetailPage() {
     }
   }
 
+  const handleOpenInspiration = (inspId: string) => {
+    navigate(`/inspiration/${inspId}`)
+  }
+
+  const handleStartRename = () => {
+    setEditTitle(board.title)
+    setEditingTitle(true)
+  }
+
+  const handleSaveRename = async () => {
+    const trimmed = editTitle.trim()
+    if (trimmed && trimmed !== board.title) {
+      try {
+        await saveBoard({ ...board, title: trimmed })
+      } catch {
+        addToast('重命名失败', 'error')
+      }
+    }
+    setEditingTitle(false)
+  }
+
   return (
     <div className="h-full flex flex-col animate-fade-in">
       <div className="flex items-center gap-3 p-4 pb-0">
         <Button variant="ghost" size="icon-sm" onClick={() => navigate('/boards')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">{board.title}</h1>
+        <div className="flex-1 min-w-0">
+          {editingTitle ? (
+            <Input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onBlur={handleSaveRename}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveRename()
+                if (e.key === 'Escape') {
+                  setEditingTitle(false)
+                }
+              }}
+              className="h-7 text-lg font-semibold"
+              autoFocus
+            />
+          ) : (
+            <h1
+              className="text-lg font-semibold cursor-pointer hover:text-primary transition-colors"
+              onClick={handleStartRename}
+            >
+              {board.title}
+            </h1>
+          )}
           {board.description && (
             <p className="text-xs text-muted-foreground">{board.description}</p>
           )}
@@ -240,6 +293,7 @@ export default function BoardDetailPage() {
                     setAddingToStatus(status)
                     setNewCardTitle('')
                   }}
+                  onOpenInspiration={handleOpenInspiration}
                 />
               )
             })}
