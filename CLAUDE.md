@@ -10,12 +10,12 @@ cd frontend
 npm run dev       # Vite dev server (localhost:5173)
 npm run build     # tsc -b && vite build → dist/
 npm run preview   # Preview production build
-npm run test      # vitest run (49 tests)
+npm run test      # vitest run (jsdom + @testing-library/jest-dom)
 npm run test:watch # vitest watch mode
 
-# Tauri desktop app
+# Tauri desktop app (v2)
 npm run tauri:dev  # Vite + Tauri dev
-npm run tauri:build # Production build → src-tauri/target/release/
+npm run tauri:build # tsc -b && vite build, then tauri build → src-tauri/target/release/
 ```
 
 ## Architecture
@@ -63,6 +63,10 @@ All pages are `React.lazy()` loaded under `AppShell` layout (`<Outlet />`):
 
 All in `src/components/ui/`. Use `React.forwardRef`, accept `className` merged via `cn()` (clsx + tailwind-merge). The `Command` component is custom (not cmdk) — uses Radix Dialog + internal React Context for keyboard navigation.
 
+### Test infrastructure
+
+Vitest with jsdom environment, `globals: true`. Setup file `src/test/setup.ts` loads `@testing-library/jest-dom/vitest` matchers. Test location: `src/test/`. Run a single test file with `npx vitest run path/to/test.test.ts`.
+
 ### Path alias
 
-`@/` → `src/` (configured in both vite.config.ts and tsconfig.json)
+`@/` → `src/` (configured in vite.config.ts, vitest.config.ts, and tsconfig.json)

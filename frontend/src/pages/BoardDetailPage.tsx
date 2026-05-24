@@ -92,7 +92,7 @@ function Column({
   const { setNodeRef } = useDroppable({ id: `col-${status}` })
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 w-72 flex flex-col bg-muted/30 rounded-xl">
+    <div ref={setNodeRef} className="flex-1 min-w-[240px] flex flex-col bg-muted/30 rounded-xl">
       <div className="flex items-center justify-between p-3 pb-2">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-medium">{STATUS_LABELS[status]}</h3>
@@ -300,7 +300,7 @@ export default function BoardDetailPage() {
           </div>
           <DragOverlay>
             {activeId && getInspiration(activeId) && (
-              <div className="p-3 rounded-xl border bg-card shadow-lg w-72">
+              <div className="p-3 rounded-xl border bg-card shadow-lg max-w-xs">
                 <p className="text-xs font-medium">{getInspiration(activeId)!.title}</p>
               </div>
             )}
